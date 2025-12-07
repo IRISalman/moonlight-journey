@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Light Echo</title>
+    <!-- Tailwind CDN (Kept as requested, though build process is recommended) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,19 +19,10 @@
         display: none; /* Chrome, Safari, Opera */
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "gsap/": "https://aistudiocdn.com/gsap@^3.13.0/",
-    "gsap": "https://aistudiocdn.com/gsap@^3.13.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/"
-  }
-}
-</script>
-</head>
+  </head>
   <body class="bg-[#020024] text-white antialiased overflow-x-hidden">
     <div id="root"></div>
+    <!-- Pointing to the root index.tsx -->
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

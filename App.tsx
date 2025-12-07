@@ -4,7 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 // --- ASSET IMPORTS ---
 import musicFile from './assets/music/music.mp3';
-import moonImg from './assets/pictures/moon.png';
+import moonImg from './assets/pictures/the_moon.png';
 import cloudsImg from './assets/pictures/clouds.png';
 import pillarTallImg from './assets/pictures/pillar_tall.png';
 import archBrokenImg from './assets/pictures/arch_broken.png';

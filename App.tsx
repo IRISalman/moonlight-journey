@@ -2,11 +2,22 @@ import React, { useLayoutEffect, useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
+// --- ASSET IMPORTS ---
+// این روش به Vite می‌گوید که این فایل‌ها بخشی از برنامه هستند و باید پردازش شوند.
+import musicFile from './assets/music/music.mp3';
+
+import moonImg from './assets/pictures/moon.png';
+import cloudsImg from './assets/pictures/clouds.png';
+import pillarTallImg from './assets/pictures/pillar_tall.png';
+import archBrokenImg from './assets/pictures/arch_broken.png';
+import craneImg from './assets/pictures/crane.png';
+import palaceImg from './assets/pictures/palace.png';
+import girlImg from './assets/pictures/girl.png';
+import reedsImg from './assets/pictures/reeds.png';
+import orbsImg from './assets/pictures/orbs.png';
+
 // Register the plugin
 gsap.registerPlugin(ScrollTrigger);
-
-// BASE_URL را از متغیرهای محیطی Vite دریافت می‌کنیم
-const BASE_URL = import.meta.env.BASE_URL;
 
 const App: React.FC = () => {
   const componentRef = useRef<HTMLDivElement>(null); // Viewport
@@ -40,7 +51,6 @@ const App: React.FC = () => {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        // تغییر در اینجا: از متغیر BASE_URL برای آدرس‌دهی استفاده می‌کنیم
         audioRef.current.play().catch(err => console.error("Audio playback failed:", err));
       }
       setIsPlaying(!isPlaying);
@@ -49,21 +59,22 @@ const App: React.FC = () => {
 
   // Image Preloading & Intro Sequence
   useEffect(() => {
-    // اصلاح شده: استفاده از BASE_URL برای آدرس‌دهی
-    const images = [
-      `${BASE_URL}pictures/moon.png`,
-      `${BASE_URL}pictures/clouds.png`,
-      `${BASE_URL}pictures/pillar_tall.png`,
-      `${BASE_URL}pictures/arch_broken.png`,
-      `${BASE_URL}pictures/crane.png`,
-      `${BASE_URL}pictures/palace.png`,
-      `${BASE_URL}pictures/girl.png`,
-      `${BASE_URL}pictures/reeds.png`,
-      `${BASE_URL}pictures/orbs.png`
+    // لیست تصاویر برای پری‌لودر (از متغیرهای ایمپورت شده استفاده می‌کنیم)
+    const imagesToLoad = [
+      moonImg,
+      cloudsImg,
+      pillarTallImg,
+      archBrokenImg,
+      craneImg,
+      palaceImg,
+      girlImg,
+      reedsImg,
+      orbsImg
     ];
 
     let loadedCount = 0;
-    const totalImages = images.length;
+    const totalImages = imagesToLoad.length;
+    
     const onImageLoad = () => {
       loadedCount++;
       if (loadedCount === totalImages) {
@@ -71,11 +82,11 @@ const App: React.FC = () => {
       }
     };
 
-    images.forEach(src => {
+    imagesToLoad.forEach(src => {
       const img = new Image();
       img.src = src; 
       img.onload = onImageLoad;
-      img.onerror = onImageLoad; // Continue even if error
+      img.onerror = onImageLoad; // Continue even if error (prevent sticking)
     });
 
     const runIntroSequence = () => {
@@ -115,7 +126,6 @@ const App: React.FC = () => {
 
       if (contentRef.current) {
         // IMPORTANT: We only animate opacity here. 
-        // Animating 'scale' or 'transform' on a parent of a fixed/pinned element breaks GSAP Pinning.
         tl.fromTo(contentRef.current, 
           { opacity: 0 }, 
           { opacity: 1, duration: 2, ease: "power2.out" }, 
@@ -182,31 +192,29 @@ const App: React.FC = () => {
       }
 
       // --- NARRATIVE SYSTEM (Scrollytelling) ---
-      // Math: t = 12.5*P - 0.5 (Time when object at P% hits 20% viewport)
-
-      // Text 1: Orb 1 at 25% -> t = 2.625
+      
+      // Text 1: Orb 1 at 25%
       if (text1Ref.current) {
         gsap.set(text1Ref.current, { opacity: 0, y: 10 });
         tl.to(text1Ref.current, { opacity: 1, y: 0, duration: 0.5 }, 2.6)
           .to(text1Ref.current, { opacity: 0, y: -10, duration: 0.5 }, 4.0);
       }
 
-      // Text 2: Orb 2 at 45% -> t = 5.125
+      // Text 2: Orb 2 at 45%
       if (text2Ref.current) {
         gsap.set(text2Ref.current, { opacity: 0, y: 10 });
         tl.to(text2Ref.current, { opacity: 1, y: 0, duration: 0.5 }, 5.1)
           .to(text2Ref.current, { opacity: 0, y: -10, duration: 0.5 }, 6.5);
       }
 
-      // Text 3: Orb 3 at 65% -> t = 7.625
+      // Text 3: Orb 3 at 65%
       if (text3Ref.current) {
         gsap.set(text3Ref.current, { opacity: 0, y: 10 });
         tl.to(text3Ref.current, { opacity: 1, y: 0, duration: 0.5 }, 7.6)
           .to(text3Ref.current, { opacity: 0, y: -10, duration: 0.5 }, 8.8);
       }
 
-      // Text 4: Orb 5 at 80% -> t = 9.5
-      // The text appears exactly when Orb 5 lights up.
+      // Text 4: Orb 5 at 80%
       if (text4Ref.current) {
         gsap.set(text4Ref.current, { opacity: 0, y: 10 });
         tl.to(text4Ref.current, { opacity: 1, y: 0, duration: 0.5 }, 9.5)
@@ -272,7 +280,7 @@ const App: React.FC = () => {
       {/* MAIN CONTENT WRAPPER */}
       <div 
         ref={contentRef}
-        className="opacity-0 relative" // Starts hidden, animated in (Opacity only)
+        className="opacity-0 relative" 
       >
         <div 
           ref={componentRef} 
@@ -288,8 +296,9 @@ const App: React.FC = () => {
               {isPlaying ? "Sound On" : "Sound Off"}
             </span>
           </button>
-          {/* اصلاح شده: استفاده از BASE_URL */}
-          <audio ref={audioRef} src={`${BASE_URL}music/music.mp3`} loop />
+          
+          {/* Audio using Imported File */}
+          <audio ref={audioRef} src={musicFile} loop />
 
           {/* NARRATIVE OVERLAY */}
           <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
@@ -352,7 +361,7 @@ const App: React.FC = () => {
           {/* MOON */}
           <img 
             ref={moonRef}
-            src={`${BASE_URL}pictures/moon.png`} 
+            src={moonImg} 
             alt="Moon" 
             className="absolute top-[10vh] right-[10vw] w-[20vh] h-[20vh] object-contain z-0 opacity-90 drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]"
           />
@@ -363,9 +372,9 @@ const App: React.FC = () => {
             className="absolute bottom-0 left-0 h-1/2 flex z-10 opacity-60 pointer-events-none mix-blend-screen"
             style={{ width: '200vw' }}
           >
-            <img src={`${BASE_URL}pictures/clouds.png`} alt="Clouds" className="w-screen h-full object-cover" />
-            <img src={`${BASE_URL}pictures/clouds.png`} alt="Clouds" className="w-screen h-full object-cover scale-x-[-1]" />
-            <img src={`${BASE_URL}pictures/clouds.png`} alt="Clouds" className="w-screen h-full object-cover" />
+            <img src={cloudsImg} alt="Clouds" className="w-screen h-full object-cover" />
+            <img src={cloudsImg} alt="Clouds" className="w-screen h-full object-cover scale-x-[-1]" />
+            <img src={cloudsImg} alt="Clouds" className="w-screen h-full object-cover" />
           </div>
 
           {/* WORLD */}
@@ -375,70 +384,70 @@ const App: React.FC = () => {
           >
             {/* 15% - Pillar */}
             <img 
-              src={`${BASE_URL}pictures/pillar_tall.png`} 
+              src={pillarTallImg} 
               alt="Ancient Pillar" 
               className="absolute bottom-0 left-[15%] h-[65vh] object-contain opacity-80 brightness-75"
             />
 
             {/* 25% - Orb 1 */}
             <img 
-              src={`${BASE_URL}pictures/orbs.png`}
+              src={orbsImg}
               alt="Memory Orb"
               className="orb-target absolute bottom-[30vh] left-[25%] w-[8vh] h-[8vh] object-contain opacity-50 grayscale scale-90"
             />
 
             {/* 35% - Broken Arch */}
             <img 
-              src={`${BASE_URL}pictures/arch_broken.png`} 
+              src={archBrokenImg} 
               alt="Broken Arch" 
               className="absolute bottom-0 left-[35%] h-[50vh] object-contain opacity-80 brightness-75"
             />
 
             {/* 45% - Orb 2 */}
             <img 
-              src={`${BASE_URL}pictures/orbs.png`}
+              src={orbsImg}
               alt="Memory Orb"
               className="orb-target absolute top-[40vh] left-[45%] w-[10vh] h-[10vh] object-contain opacity-50 grayscale scale-90"
             />
 
             {/* 50% - Pillar Flipped */}
             <img 
-              src={`${BASE_URL}pictures/pillar_tall.png`} 
+              src={pillarTallImg} 
               alt="Ancient Pillar" 
               className="absolute bottom-0 left-[50%] h-[60vh] object-contain opacity-80 brightness-75 scale-x-[-1]"
             />
 
             {/* 60% - Crane */}
             <img 
-              src={`${BASE_URL}pictures/crane.png`} 
+              src={craneImg} 
               alt="Paper Crane" 
               className="absolute top-[15%] left-[60%] w-[15vh] object-contain opacity-90 drop-shadow-lg"
             />
 
             {/* 65% - Orb 3 */}
             <img 
-              src={`${BASE_URL}pictures/orbs.png`}
+              src={orbsImg}
               alt="Memory Orb"
               className="orb-target absolute bottom-[20vh] left-[65%] w-[7vh] h-[7vh] object-contain opacity-50 grayscale scale-90"
             />
 
             {/* 75% - Orb 4 (Path Start) */}
             <img 
-              src={`${BASE_URL}pictures/orbs.png`}
+              src={orbsImg}
               alt="Memory Orb"
               className="orb-target absolute top-[25vh] left-[75%] w-[9vh] h-[9vh] object-contain opacity-50 grayscale scale-90"
             />
 
             {/* 80% - Orb 5 (Path End) */}
             <img 
-              src={`${BASE_URL}pictures/orbs.png`}
+              src={orbsImg}
               alt="Memory Orb"
               className="orb-target absolute bottom-[45vh] left-[80%] w-[8vh] h-[8vh] object-contain opacity-50 grayscale scale-90"
             />
 
             {/* 90% - Moon Palace */}
             <img 
-              src={`${BASE_URL}pictures/palace.png`} 
+              src={palaceImg} 
               alt="Moon Palace" 
               className="absolute bottom-0 left-[90%] h-[75vh] object-contain drop-shadow-[0_0_80px_rgba(200,200,255,0.6)] brightness-110"
             />
@@ -447,7 +456,7 @@ const App: React.FC = () => {
           {/* GIRL */}
           <img
             ref={girlRef}
-            src={`${BASE_URL}pictures/girl.png`}
+            src={girlImg}
             alt="The Girl"
             className="absolute top-[45%] left-[20%] w-[18vh] object-contain z-30 opacity-100 drop-shadow-[0_0_30px_rgba(255,255,255,0.8)]" 
           />
@@ -461,7 +470,7 @@ const App: React.FC = () => {
             {Array.from({ length: 8 }).map((_, i) => (
               <img 
                 key={i}
-                src={`${BASE_URL}pictures/reeds.png`} 
+                src={reedsImg} 
                 alt="Reeds" 
                 className="w-screen h-full object-cover object-bottom opacity-100" 
               />

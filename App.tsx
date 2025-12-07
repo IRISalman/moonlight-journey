@@ -5,6 +5,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 // Register the plugin
 gsap.registerPlugin(ScrollTrigger);
 
+// BASE_URL را از متغیرهای محیطی Vite دریافت می‌کنیم
+const BASE_URL = import.meta.env.BASE_URL;
+
 const App: React.FC = () => {
   const componentRef = useRef<HTMLDivElement>(null); // Viewport
   
@@ -37,6 +40,7 @@ const App: React.FC = () => {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
+        // تغییر در اینجا: از متغیر BASE_URL برای آدرس‌دهی استفاده می‌کنیم
         audioRef.current.play().catch(err => console.error("Audio playback failed:", err));
       }
       setIsPlaying(!isPlaying);
@@ -45,17 +49,17 @@ const App: React.FC = () => {
 
   // Image Preloading & Intro Sequence
   useEffect(() => {
-    // اصلاح شده: اضافه شدن "./" برای مسیردهی مطلق نسبت به پوشه فعلی
+    // اصلاح شده: استفاده از BASE_URL برای آدرس‌دهی
     const images = [
-      "./pictures/moon.png",
-      "./pictures/clouds.png",
-      "./pictures/pillar_tall.png",
-      "./pictures/arch_broken.png",
-      "./pictures/crane.png",
-      "./pictures/palace.png",
-      "./pictures/girl.png",
-      "./pictures/reeds.png",
-      "./pictures/orbs.png"
+      `${BASE_URL}pictures/moon.png`,
+      `${BASE_URL}pictures/clouds.png`,
+      `${BASE_URL}pictures/pillar_tall.png`,
+      `${BASE_URL}pictures/arch_broken.png`,
+      `${BASE_URL}pictures/crane.png`,
+      `${BASE_URL}pictures/palace.png`,
+      `${BASE_URL}pictures/girl.png`,
+      `${BASE_URL}pictures/reeds.png`,
+      `${BASE_URL}pictures/orbs.png`
     ];
 
     let loadedCount = 0;
@@ -69,7 +73,6 @@ const App: React.FC = () => {
 
     images.forEach(src => {
       const img = new Image();
-      // مهم: در اینجا خود مرورگر ./ را اعمال می‌کند، اما در آرایه برای لودینگ اولیه مهم است
       img.src = src; 
       img.onload = onImageLoad;
       img.onerror = onImageLoad; // Continue even if error
@@ -285,8 +288,8 @@ const App: React.FC = () => {
               {isPlaying ? "Sound On" : "Sound Off"}
             </span>
           </button>
-          {/* UPDATED: Added "./" for relative path fix */}
-          <audio ref={audioRef} src="./music/music.mp3" loop />
+          {/* اصلاح شده: استفاده از BASE_URL */}
+          <audio ref={audioRef} src={`${BASE_URL}music/music.mp3`} loop />
 
           {/* NARRATIVE OVERLAY */}
           <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
@@ -349,7 +352,7 @@ const App: React.FC = () => {
           {/* MOON */}
           <img 
             ref={moonRef}
-            src="./pictures/moon.png" 
+            src={`${BASE_URL}pictures/moon.png`} 
             alt="Moon" 
             className="absolute top-[10vh] right-[10vw] w-[20vh] h-[20vh] object-contain z-0 opacity-90 drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]"
           />
@@ -360,9 +363,9 @@ const App: React.FC = () => {
             className="absolute bottom-0 left-0 h-1/2 flex z-10 opacity-60 pointer-events-none mix-blend-screen"
             style={{ width: '200vw' }}
           >
-            <img src="./pictures/clouds.png" alt="Clouds" className="w-screen h-full object-cover" />
-            <img src="./pictures/clouds.png" alt="Clouds" className="w-screen h-full object-cover scale-x-[-1]" />
-            <img src="./pictures/clouds.png" alt="Clouds" className="w-screen h-full object-cover" />
+            <img src={`${BASE_URL}pictures/clouds.png`} alt="Clouds" className="w-screen h-full object-cover" />
+            <img src={`${BASE_URL}pictures/clouds.png`} alt="Clouds" className="w-screen h-full object-cover scale-x-[-1]" />
+            <img src={`${BASE_URL}pictures/clouds.png`} alt="Clouds" className="w-screen h-full object-cover" />
           </div>
 
           {/* WORLD */}
@@ -372,70 +375,70 @@ const App: React.FC = () => {
           >
             {/* 15% - Pillar */}
             <img 
-              src="./pictures/pillar_tall.png" 
+              src={`${BASE_URL}pictures/pillar_tall.png`} 
               alt="Ancient Pillar" 
               className="absolute bottom-0 left-[15%] h-[65vh] object-contain opacity-80 brightness-75"
             />
 
             {/* 25% - Orb 1 */}
             <img 
-              src="./pictures/orbs.png"
+              src={`${BASE_URL}pictures/orbs.png`}
               alt="Memory Orb"
               className="orb-target absolute bottom-[30vh] left-[25%] w-[8vh] h-[8vh] object-contain opacity-50 grayscale scale-90"
             />
 
             {/* 35% - Broken Arch */}
             <img 
-              src="./pictures/arch_broken.png" 
+              src={`${BASE_URL}pictures/arch_broken.png`} 
               alt="Broken Arch" 
               className="absolute bottom-0 left-[35%] h-[50vh] object-contain opacity-80 brightness-75"
             />
 
             {/* 45% - Orb 2 */}
             <img 
-              src="./pictures/orbs.png"
+              src={`${BASE_URL}pictures/orbs.png`}
               alt="Memory Orb"
               className="orb-target absolute top-[40vh] left-[45%] w-[10vh] h-[10vh] object-contain opacity-50 grayscale scale-90"
             />
 
             {/* 50% - Pillar Flipped */}
             <img 
-              src="./pictures/pillar_tall.png" 
+              src={`${BASE_URL}pictures/pillar_tall.png`} 
               alt="Ancient Pillar" 
               className="absolute bottom-0 left-[50%] h-[60vh] object-contain opacity-80 brightness-75 scale-x-[-1]"
             />
 
             {/* 60% - Crane */}
             <img 
-              src="./pictures/crane.png" 
+              src={`${BASE_URL}pictures/crane.png`} 
               alt="Paper Crane" 
               className="absolute top-[15%] left-[60%] w-[15vh] object-contain opacity-90 drop-shadow-lg"
             />
 
             {/* 65% - Orb 3 */}
             <img 
-              src="./pictures/orbs.png"
+              src={`${BASE_URL}pictures/orbs.png`}
               alt="Memory Orb"
               className="orb-target absolute bottom-[20vh] left-[65%] w-[7vh] h-[7vh] object-contain opacity-50 grayscale scale-90"
             />
 
             {/* 75% - Orb 4 (Path Start) */}
             <img 
-              src="./pictures/orbs.png"
+              src={`${BASE_URL}pictures/orbs.png`}
               alt="Memory Orb"
               className="orb-target absolute top-[25vh] left-[75%] w-[9vh] h-[9vh] object-contain opacity-50 grayscale scale-90"
             />
 
             {/* 80% - Orb 5 (Path End) */}
             <img 
-              src="./pictures/orbs.png"
+              src={`${BASE_URL}pictures/orbs.png`}
               alt="Memory Orb"
               className="orb-target absolute bottom-[45vh] left-[80%] w-[8vh] h-[8vh] object-contain opacity-50 grayscale scale-90"
             />
 
             {/* 90% - Moon Palace */}
             <img 
-              src="./pictures/palace.png" 
+              src={`${BASE_URL}pictures/palace.png`} 
               alt="Moon Palace" 
               className="absolute bottom-0 left-[90%] h-[75vh] object-contain drop-shadow-[0_0_80px_rgba(200,200,255,0.6)] brightness-110"
             />
@@ -444,7 +447,7 @@ const App: React.FC = () => {
           {/* GIRL */}
           <img
             ref={girlRef}
-            src="./pictures/girl.png"
+            src={`${BASE_URL}pictures/girl.png`}
             alt="The Girl"
             className="absolute top-[45%] left-[20%] w-[18vh] object-contain z-30 opacity-100 drop-shadow-[0_0_30px_rgba(255,255,255,0.8)]" 
           />
@@ -458,7 +461,7 @@ const App: React.FC = () => {
             {Array.from({ length: 8 }).map((_, i) => (
               <img 
                 key={i}
-                src="./pictures/reeds.png" 
+                src={`${BASE_URL}pictures/reeds.png`} 
                 alt="Reeds" 
                 className="w-screen h-full object-cover object-bottom opacity-100" 
               />

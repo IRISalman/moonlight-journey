@@ -5,8 +5,8 @@ import path from 'path';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
-      // تنظیم بیس برای گیت‌هاب پیجز
-      base: '/moonlight-journey/',
+      // نام ریپازیتوری شما: moonlight-journey
+      base: '/moonlight-journey/', 
       server: {
         port: 3000,
         host: '0.0.0.0',

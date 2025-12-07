@@ -3,7 +3,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 // --- ASSET IMPORTS ---
-// این روش به Vite می‌گوید که این فایل‌ها بخشی از برنامه هستند و باید پردازش شوند.
+// این روش به Vite می‌گوید که این فایل‌ها بخشی از برنامه هستند و باید پردازش شوند..
 import musicFile from './assets/music/music.mp3';
 
 import moonImg from './assets/pictures/moon.png';

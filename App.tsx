@@ -3,9 +3,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 // --- ASSET IMPORTS ---
-// این روش به Vite می‌گوید که این فایل‌ها بخشی از برنامه هستند و باید پردازش شوند..
 import musicFile from './assets/music/music.mp3';
-
 import moonImg from './assets/pictures/moon.png';
 import cloudsImg from './assets/pictures/clouds.png';
 import pillarTallImg from './assets/pictures/pillar_tall.png';
@@ -20,14 +18,19 @@ import orbsImg from './assets/pictures/orbs.png';
 gsap.registerPlugin(ScrollTrigger);
 
 const App: React.FC = () => {
-  const componentRef = useRef<HTMLDivElement>(null); // Viewport
+  // --- DEBUGGING LOGS ---
+  // این لاگ‌ها را در کنسول مرورگر چک کن
+  console.log("Moon Path:", moonImg);
+  console.log("Music Path:", musicFile);
+
+  const componentRef = useRef<HTMLDivElement>(null); 
   
   // Layers
-  const sliderRef = useRef<HTMLDivElement>(null);    // Main World (Midground)
-  const moonRef = useRef<HTMLImageElement>(null);    // Parallax Layer 1 (Background)
-  const cloudsRef = useRef<HTMLDivElement>(null);    // Parallax Layer 2 (Background)
-  const girlRef = useRef<HTMLImageElement>(null);    // Player Layer (Fixed)
-  const reedsRef = useRef<HTMLDivElement>(null);     // Foreground Layer (Fastest)
+  const sliderRef = useRef<HTMLDivElement>(null);    
+  const moonRef = useRef<HTMLImageElement>(null);    
+  const cloudsRef = useRef<HTMLDivElement>(null);    
+  const girlRef = useRef<HTMLImageElement>(null);    
+  const reedsRef = useRef<HTMLDivElement>(null);     
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Narrative Text Refs
@@ -41,7 +44,7 @@ const App: React.FC = () => {
   const preloaderRef = useRef<HTMLDivElement>(null);
   const counterRef = useRef<HTMLSpanElement>(null);
   const nameRef = useRef<HTMLHeadingElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null); // Wrapper for main content animation
+  const contentRef = useRef<HTMLDivElement>(null); 
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +54,12 @@ const App: React.FC = () => {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play().catch(err => console.error("Audio playback failed:", err));
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.error("Audio playback error:", error);
+            });
+        }
       }
       setIsPlaying(!isPlaying);
     }
@@ -59,7 +67,6 @@ const App: React.FC = () => {
 
   // Image Preloading & Intro Sequence
   useEffect(() => {
-    // لیست تصاویر برای پری‌لودر (از متغیرهای ایمپورت شده استفاده می‌کنیم)
     const imagesToLoad = [
       moonImg,
       cloudsImg,
@@ -86,19 +93,21 @@ const App: React.FC = () => {
       const img = new Image();
       img.src = src; 
       img.onload = onImageLoad;
-      img.onerror = onImageLoad; // Continue even if error (prevent sticking)
+      img.onerror = (e) => {
+          console.error("Failed to load image:", src, e);
+          onImageLoad(); // Continue anyway
+      };
     });
 
     const runIntroSequence = () => {
       const tl = gsap.timeline({
         onComplete: () => {
           setIsLoading(false);
-          // Refresh ScrollTrigger after loading/animations changes
           ScrollTrigger.refresh();
         }
       });
 
-      // 1. Counter 0 to 100
+      // 1. Counter
       if (counterRef.current) {
         tl.to(counterRef.current, { 
           innerText: 100, 
@@ -109,36 +118,34 @@ const App: React.FC = () => {
             if(counterRef.current) counterRef.current.innerText = Math.round(this.targets()[0].innerText) + "%";
           }
         });
-        // Fade out counter
         tl.to(counterRef.current, { opacity: 0, duration: 0.5 });
       }
 
-      // 2. Name Reveal "Zahra"
+      // 2. Name
       if (nameRef.current) {
         tl.to(nameRef.current, { opacity: 1, duration: 1.5, ease: "power2.inOut" }, "-=0.2");
         tl.to(nameRef.current, { opacity: 0, duration: 1, ease: "power2.inOut" }, "+=1.5");
       }
 
-      // 3. Preloader Exit & World Entrance
+      // 3. Preloader Exit
       if (preloaderRef.current) {
         tl.to(preloaderRef.current, { opacity: 0, duration: 1.5, ease: "power2.inOut" });
       }
 
       if (contentRef.current) {
-        // IMPORTANT: We only animate opacity here. 
         tl.fromTo(contentRef.current, 
           { opacity: 0 }, 
           { opacity: 1, duration: 2, ease: "power2.out" }, 
-          "<" // Start together with preloader fade out
+          "<" 
         );
       }
     };
 
   }, []);
 
-  // Enable Keyboard Navigation
+  // Keyboard Navigation
   useEffect(() => {
-    if (isLoading) return; // Disable during loading
+    if (isLoading) return; 
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const scrollStep = 100;
@@ -157,7 +164,6 @@ const App: React.FC = () => {
     if (isLoading) return;
 
     const ctx = gsap.context(() => {
-      // Master Timeline
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: componentRef.current,
@@ -170,95 +176,60 @@ const App: React.FC = () => {
 
       const DURATION = 10;
 
-      // --- Layer 1: Moon ---
-      if (moonRef.current) {
-        tl.to(moonRef.current, { xPercent: -20, ease: "none", duration: DURATION }, 0);
-      }
-
-      // --- Layer 2: Clouds ---
-      if (cloudsRef.current) {
-        tl.to(cloudsRef.current, { xPercent: -40, ease: "none", duration: DURATION }, 0);
-      }
-
-      // --- Layer 3: World ---
-      let worldTween: gsap.core.Timeline | undefined;
-      if (sliderRef.current) {
-        worldTween = tl.to(sliderRef.current, { x: "-400vw", ease: "none", duration: DURATION }, 0);
-      }
-
-      // --- Layer 4: Reeds ---
-      if (reedsRef.current) {
-        tl.to(reedsRef.current, { x: "-600vw", ease: "none", duration: DURATION }, 0);
-      }
-
-      // --- NARRATIVE SYSTEM (Scrollytelling) ---
+      if (moonRef.current) tl.to(moonRef.current, { xPercent: -20, ease: "none", duration: DURATION }, 0);
+      if (cloudsRef.current) tl.to(cloudsRef.current, { xPercent: -40, ease: "none", duration: DURATION }, 0);
       
-      // Text 1: Orb 1 at 25%
+      let worldTween: gsap.core.Timeline | undefined;
+      if (sliderRef.current) worldTween = tl.to(sliderRef.current, { x: "-400vw", ease: "none", duration: DURATION }, 0);
+      
+      if (reedsRef.current) tl.to(reedsRef.current, { x: "-600vw", ease: "none", duration: DURATION }, 0);
+
+      // Narrative
       if (text1Ref.current) {
         gsap.set(text1Ref.current, { opacity: 0, y: 10 });
         tl.to(text1Ref.current, { opacity: 1, y: 0, duration: 0.5 }, 2.6)
           .to(text1Ref.current, { opacity: 0, y: -10, duration: 0.5 }, 4.0);
       }
-
-      // Text 2: Orb 2 at 45%
       if (text2Ref.current) {
         gsap.set(text2Ref.current, { opacity: 0, y: 10 });
         tl.to(text2Ref.current, { opacity: 1, y: 0, duration: 0.5 }, 5.1)
           .to(text2Ref.current, { opacity: 0, y: -10, duration: 0.5 }, 6.5);
       }
-
-      // Text 3: Orb 3 at 65%
       if (text3Ref.current) {
         gsap.set(text3Ref.current, { opacity: 0, y: 10 });
         tl.to(text3Ref.current, { opacity: 1, y: 0, duration: 0.5 }, 7.6)
           .to(text3Ref.current, { opacity: 0, y: -10, duration: 0.5 }, 8.8);
       }
-
-      // Text 4: Orb 5 at 80%
       if (text4Ref.current) {
         gsap.set(text4Ref.current, { opacity: 0, y: 10 });
         tl.to(text4Ref.current, { opacity: 1, y: 0, duration: 0.5 }, 9.5)
           .to(text4Ref.current, { opacity: 0, y: -10, duration: 0.5 }, 9.95);
       }
 
-      // CTA Button
       if (ctaRef.current) {
         gsap.set(ctaRef.current, { autoAlpha: 0, y: 20 });
         tl.to(ctaRef.current, { autoAlpha: 1, y: 0, duration: 0.5 }, 9.8);
       }
 
-      // --- Animation: Girl ---
       if (girlRef.current) {
         gsap.to(girlRef.current, {
-          y: -15, 
-          duration: 3,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
+          y: -15, duration: 3, repeat: -1, yoyo: true, ease: "sine.inOut",
         });
       }
 
-      // --- Interaction: Orbs ---
       if (worldTween) {
         const orbs = gsap.utils.toArray<HTMLElement>(".orb-target");
         orbs.forEach((orb) => {
           gsap.to(orb, {
-            scale: 1.3,
-            opacity: 1,
-            filter: "grayscale(0%) drop-shadow(0 0 25px rgba(255, 255, 255, 1))",
-            duration: 0.8,
-            ease: "power2.out",
+            scale: 1.3, opacity: 1, filter: "grayscale(0%) drop-shadow(0 0 25px rgba(255, 255, 255, 1))",
+            duration: 0.8, ease: "power2.out",
             scrollTrigger: {
-              trigger: orb,
-              containerAnimation: worldTween,
-              start: "left 22%", 
-              end: "right 5%",
-              toggleActions: "play reverse play reverse",
+              trigger: orb, containerAnimation: worldTween,
+              start: "left 22%", end: "right 5%", toggleActions: "play reverse play reverse",
             }
           });
         });
       }
-
     }, componentRef);
 
     return () => ctx.revert();
@@ -266,6 +237,12 @@ const App: React.FC = () => {
 
   return (
     <>
+      {/* --- DEBUG IMAGE (این عکس باید همیشه دیده شود) --- */}
+      <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 99999, background: 'rgba(0,0,0,0.5)', padding: '5px' }}>
+          <p style={{color: 'white', fontSize: '10px', margin: 0}}>DEBUG MODE</p>
+          <img src={moonImg} alt="Debug Moon" style={{ width: '50px', height: '50px' }} />
+      </div>
+
       {/* PRELOADER */}
       <div 
         ref={preloaderRef}
@@ -297,50 +274,25 @@ const App: React.FC = () => {
             </span>
           </button>
           
-          {/* Audio using Imported File */}
-          <audio ref={audioRef} src={musicFile} loop />
+          <audio ref={audioRef} src={musicFile} loop preload="auto" />
 
           {/* NARRATIVE OVERLAY */}
           <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
-            
-            {/* Segment 1 */}
             <div ref={text1Ref} className="absolute flex flex-col items-center text-center opacity-0 px-4">
-              <h2 className="text-3xl md:text-5xl font-light text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] mb-4 leading-tight">
-                "My first love wasn’t a story <br/>— it was you."
-              </h2>
-              <p className="text-lg md:text-xl text-white/80 italic font-light tracking-wide">
-                And even distance couldn’t rewrite that.
-              </p>
+              <h2 className="text-3xl md:text-5xl font-light text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] mb-4 leading-tight">"My first love wasn’t a story <br/>— it was you."</h2>
+              <p className="text-lg md:text-xl text-white/80 italic font-light tracking-wide">And even distance couldn’t rewrite that.</p>
             </div>
-
-            {/* Segment 2 */}
             <div ref={text2Ref} className="absolute flex flex-col items-center text-center opacity-0 px-4">
-              <h2 className="text-3xl md:text-5xl font-light text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] mb-4 leading-tight">
-                "I stepped away not because <br/> my feelings disappeared..."
-              </h2>
-              <p className="text-lg md:text-xl text-white/80 italic font-light tracking-wide">
-                ...but because I didn’t know how to protect what mattered too much.
-              </p>
+              <h2 className="text-3xl md:text-5xl font-light text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] mb-4 leading-tight">"I stepped away not because <br/> my feelings disappeared..."</h2>
+              <p className="text-lg md:text-xl text-white/80 italic font-light tracking-wide">...but because I didn’t know how to protect what mattered too much.</p>
             </div>
-
-            {/* Segment 3 */}
             <div ref={text3Ref} className="absolute flex flex-col items-center text-center opacity-0 px-4">
-              <h2 className="text-3xl md:text-5xl font-light text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] mb-4 leading-tight">
-                "To the strange, beautiful little <br/> world we built..."
-              </h2>
-              <p className="text-lg md:text-xl text-white/80 italic font-light tracking-wide">
-                A kingdom means nothing if the Queen is gone.
-              </p>
+              <h2 className="text-3xl md:text-5xl font-light text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] mb-4 leading-tight">"To the strange, beautiful little <br/> world we built..."</h2>
+              <p className="text-lg md:text-xl text-white/80 italic font-light tracking-wide">A kingdom means nothing if the Queen is gone.</p>
             </div>
-
-            {/* Segment 4 */}
             <div ref={text4Ref} className="absolute flex flex-col items-center text-center opacity-0 px-4">
-              <h2 className="text-3xl md:text-5xl font-light text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] mb-4 leading-tight">
-                "If your world still has space for me..."
-              </h2>
-              <p className="text-lg md:text-xl text-white/80 italic font-light tracking-wide">
-                I know the way back.
-              </p>
+              <h2 className="text-3xl md:text-5xl font-light text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] mb-4 leading-tight">"If your world still has space for me..."</h2>
+              <p className="text-lg md:text-xl text-white/80 italic font-light tracking-wide">I know the way back.</p>
             </div>
           </div>
 
@@ -352,128 +304,40 @@ const App: React.FC = () => {
             rel="noopener noreferrer"
             className="fixed bottom-12 left-1/2 transform -translate-x-1/2 z-50 pointer-events-auto opacity-0 flex items-center gap-3 px-6 py-3 bg-white/5 border border-white/20 rounded-full hover:bg-white/15 hover:border-white/40 transition-all group backdrop-blur-sm"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="text-white/90" viewBox="0 0 16 16">
-              <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/>
-            </svg>
             <span className="text-sm uppercase tracking-widest text-white/90">Waiting for your answer</span>
           </a>
 
           {/* MOON */}
-          <img 
-            ref={moonRef}
-            src={moonImg} 
-            alt="Moon" 
-            className="absolute top-[10vh] right-[10vw] w-[20vh] h-[20vh] object-contain z-0 opacity-90 drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]"
-          />
+          <img ref={moonRef} src={moonImg} alt="Moon" className="absolute top-[10vh] right-[10vw] w-[20vh] h-[20vh] object-contain z-0 opacity-90 drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]" />
 
           {/* CLOUDS */}
-          <div 
-            ref={cloudsRef}
-            className="absolute bottom-0 left-0 h-1/2 flex z-10 opacity-60 pointer-events-none mix-blend-screen"
-            style={{ width: '200vw' }}
-          >
+          <div ref={cloudsRef} className="absolute bottom-0 left-0 h-1/2 flex z-10 opacity-60 pointer-events-none mix-blend-screen" style={{ width: '200vw' }}>
             <img src={cloudsImg} alt="Clouds" className="w-screen h-full object-cover" />
             <img src={cloudsImg} alt="Clouds" className="w-screen h-full object-cover scale-x-[-1]" />
             <img src={cloudsImg} alt="Clouds" className="w-screen h-full object-cover" />
           </div>
 
           {/* WORLD */}
-          <div 
-            ref={sliderRef} 
-            className="relative flex h-full w-[500vw] z-20 pointer-events-none"
-          >
-            {/* 15% - Pillar */}
-            <img 
-              src={pillarTallImg} 
-              alt="Ancient Pillar" 
-              className="absolute bottom-0 left-[15%] h-[65vh] object-contain opacity-80 brightness-75"
-            />
-
-            {/* 25% - Orb 1 */}
-            <img 
-              src={orbsImg}
-              alt="Memory Orb"
-              className="orb-target absolute bottom-[30vh] left-[25%] w-[8vh] h-[8vh] object-contain opacity-50 grayscale scale-90"
-            />
-
-            {/* 35% - Broken Arch */}
-            <img 
-              src={archBrokenImg} 
-              alt="Broken Arch" 
-              className="absolute bottom-0 left-[35%] h-[50vh] object-contain opacity-80 brightness-75"
-            />
-
-            {/* 45% - Orb 2 */}
-            <img 
-              src={orbsImg}
-              alt="Memory Orb"
-              className="orb-target absolute top-[40vh] left-[45%] w-[10vh] h-[10vh] object-contain opacity-50 grayscale scale-90"
-            />
-
-            {/* 50% - Pillar Flipped */}
-            <img 
-              src={pillarTallImg} 
-              alt="Ancient Pillar" 
-              className="absolute bottom-0 left-[50%] h-[60vh] object-contain opacity-80 brightness-75 scale-x-[-1]"
-            />
-
-            {/* 60% - Crane */}
-            <img 
-              src={craneImg} 
-              alt="Paper Crane" 
-              className="absolute top-[15%] left-[60%] w-[15vh] object-contain opacity-90 drop-shadow-lg"
-            />
-
-            {/* 65% - Orb 3 */}
-            <img 
-              src={orbsImg}
-              alt="Memory Orb"
-              className="orb-target absolute bottom-[20vh] left-[65%] w-[7vh] h-[7vh] object-contain opacity-50 grayscale scale-90"
-            />
-
-            {/* 75% - Orb 4 (Path Start) */}
-            <img 
-              src={orbsImg}
-              alt="Memory Orb"
-              className="orb-target absolute top-[25vh] left-[75%] w-[9vh] h-[9vh] object-contain opacity-50 grayscale scale-90"
-            />
-
-            {/* 80% - Orb 5 (Path End) */}
-            <img 
-              src={orbsImg}
-              alt="Memory Orb"
-              className="orb-target absolute bottom-[45vh] left-[80%] w-[8vh] h-[8vh] object-contain opacity-50 grayscale scale-90"
-            />
-
-            {/* 90% - Moon Palace */}
-            <img 
-              src={palaceImg} 
-              alt="Moon Palace" 
-              className="absolute bottom-0 left-[90%] h-[75vh] object-contain drop-shadow-[0_0_80px_rgba(200,200,255,0.6)] brightness-110"
-            />
+          <div ref={sliderRef} className="relative flex h-full w-[500vw] z-20 pointer-events-none">
+            <img src={pillarTallImg} alt="Ancient Pillar" className="absolute bottom-0 left-[15%] h-[65vh] object-contain opacity-80 brightness-75" />
+            <img src={orbsImg} alt="Memory Orb" className="orb-target absolute bottom-[30vh] left-[25%] w-[8vh] h-[8vh] object-contain opacity-50 grayscale scale-90" />
+            <img src={archBrokenImg} alt="Broken Arch" className="absolute bottom-0 left-[35%] h-[50vh] object-contain opacity-80 brightness-75" />
+            <img src={orbsImg} alt="Memory Orb" className="orb-target absolute top-[40vh] left-[45%] w-[10vh] h-[10vh] object-contain opacity-50 grayscale scale-90" />
+            <img src={pillarTallImg} alt="Ancient Pillar" className="absolute bottom-0 left-[50%] h-[60vh] object-contain opacity-80 brightness-75 scale-x-[-1]" />
+            <img src={craneImg} alt="Paper Crane" className="absolute top-[15%] left-[60%] w-[15vh] object-contain opacity-90 drop-shadow-lg" />
+            <img src={orbsImg} alt="Memory Orb" className="orb-target absolute bottom-[20vh] left-[65%] w-[7vh] h-[7vh] object-contain opacity-50 grayscale scale-90" />
+            <img src={orbsImg} alt="Memory Orb" className="orb-target absolute top-[25vh] left-[75%] w-[9vh] h-[9vh] object-contain opacity-50 grayscale scale-90" />
+            <img src={orbsImg} alt="Memory Orb" className="orb-target absolute bottom-[45vh] left-[80%] w-[8vh] h-[8vh] object-contain opacity-50 grayscale scale-90" />
+            <img src={palaceImg} alt="Moon Palace" className="absolute bottom-0 left-[90%] h-[75vh] object-contain drop-shadow-[0_0_80px_rgba(200,200,255,0.6)] brightness-110" />
           </div>
 
           {/* GIRL */}
-          <img
-            ref={girlRef}
-            src={girlImg}
-            alt="The Girl"
-            className="absolute top-[45%] left-[20%] w-[18vh] object-contain z-30 opacity-100 drop-shadow-[0_0_30px_rgba(255,255,255,0.8)]" 
-          />
+          <img ref={girlRef} src={girlImg} alt="The Girl" className="absolute top-[45%] left-[20%] w-[18vh] object-contain z-30 opacity-100 drop-shadow-[0_0_30px_rgba(255,255,255,0.8)]" />
 
           {/* REEDS */}
-          <div 
-            ref={reedsRef}
-            className="absolute bottom-0 left-0 h-[45vh] flex z-40 pointer-events-none"
-            style={{ width: '800vw' }}
-          >
+          <div ref={reedsRef} className="absolute bottom-0 left-0 h-[45vh] flex z-40 pointer-events-none" style={{ width: '800vw' }}>
             {Array.from({ length: 8 }).map((_, i) => (
-              <img 
-                key={i}
-                src={reedsImg} 
-                alt="Reeds" 
-                className="w-screen h-full object-cover object-bottom opacity-100" 
-              />
+              <img key={i} src={reedsImg} alt="Reeds" className="w-screen h-full object-cover object-bottom opacity-100" />
             ))}
           </div>
         </div>

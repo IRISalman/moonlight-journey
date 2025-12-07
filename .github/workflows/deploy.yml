@@ -25,9 +25,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          # خط زیر را برای حل مشکل package-lock حذف می‌کنیم:
+          # cache: 'npm'
 
       - name: Install dependencies
+        # تغییر به 'npm install' برای عدم نیاز به package-lock.json
         run: npm install
 
       - name: Build project

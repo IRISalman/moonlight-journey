@@ -5,22 +5,24 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 // Register the plugin
 gsap.registerPlugin(ScrollTrigger);
 
-// --- STATIC PATH CONFIGURATION (Plan C) ---
-// این آدرس به مرورگر می‌گوید فایل‌ها را مستقیم از پوشه پابلیک بردارد
-const BASE_PATH = '/moonlight-journey/media';
+// --- DYNAMIC PATH CONFIGURATION ---
+const BASE_PATH = import.meta.env.BASE_URL + 'media';
 
-// تابع کمکی برای ساخت آدرس فایل‌ها
-const getPath = (path: string) => `${BASE_PATH}${path}`;
+// تابع کمکی اصلاح شده
+const getPath = (path: string) => {
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    return `${BASE_PATH}/${cleanPath}`;
+};
 
 const App: React.FC = () => {
-  const componentRef = useRef<HTMLDivElement>(null); // Viewport
+  const componentRef = useRef<HTMLDivElement>(null);
   
   // Layers
-  const sliderRef = useRef<HTMLDivElement>(null);    // Main World (Midground)
-  const moonRef = useRef<HTMLImageElement>(null);    // Parallax Layer 1 (Background)
-  const cloudsRef = useRef<HTMLDivElement>(null);    // Parallax Layer 2 (Background)
-  const girlRef = useRef<HTMLImageElement>(null);    // Player Layer (Fixed)
-  const reedsRef = useRef<HTMLDivElement>(null);     // Foreground Layer (Fastest)
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const moonRef = useRef<HTMLImageElement>(null);
+  const cloudsRef = useRef<HTMLDivElement>(null);
+  const girlRef = useRef<HTMLImageElement>(null);
+  const reedsRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Narrative Text Refs
@@ -34,28 +36,60 @@ const App: React.FC = () => {
   const preloaderRef = useRef<HTMLDivElement>(null);
   const counterRef = useRef<HTMLSpanElement>(null);
   const nameRef = useRef<HTMLHeadingElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null); // Wrapper for main content animation
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- AUDIO LOGIC (UPDATED) ---
   const toggleMusic = () => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play().catch(err => console.error("Audio playback failed:", err));
+        audioRef.current.play().catch(console.error);
       }
       setIsPlaying(!isPlaying);
     }
   };
 
+  // تلاش برای پخش خودکار + پخش با اولین کلیک در صورت شکست
+  useEffect(() => {
+    if (isLoading) return;
+
+    const playAudio = () => {
+        if (audioRef.current && !isPlaying) {
+            audioRef.current.play()
+                .then(() => {
+                    setIsPlaying(true);
+                    // اگر موفق شد، لیسنرها را حذف کن
+                    document.removeEventListener('click', playAudio);
+                    document.removeEventListener('keydown', playAudio);
+                })
+                .catch((err) => {
+                    console.log("Autoplay blocked by browser, waiting for interaction...");
+                });
+        }
+    };
+
+    // 1. تلاش اولیه (ممکن است بلاک شود)
+    playAudio();
+
+    // 2. اگر بلاک شد، با اولین کلیک یا دکمه کیبورد پخش کن
+    document.addEventListener('click', playAudio);
+    document.addEventListener('keydown', playAudio);
+
+    return () => {
+        document.removeEventListener('click', playAudio);
+        document.removeEventListener('keydown', playAudio);
+    };
+  }, [isLoading]); 
+  // --- END AUDIO LOGIC ---
+
   // Image Preloading & Intro Sequence
   useEffect(() => {
-    // لیست فایل‌ها با آدرس‌دهی جدید
-    // نکته: اگر اسم فایل ماه را عوض کردی، اینجا هم عوض کن
     const images = [
-      getPath('/pictures/moon.png'), // یا the_moon.png
+      getPath('/pictures/moon.png'),
       getPath('/pictures/clouds.png'),
       getPath('/pictures/pillar_tall.png'),
       getPath('/pictures/arch_broken.png'),
@@ -80,10 +114,7 @@ const App: React.FC = () => {
       const img = new Image();
       img.src = src; 
       img.onload = onImageLoad;
-      img.onerror = (e) => {
-          console.error("Failed to load:", src, e);
-          onImageLoad(); // ادامه بده حتی اگر ارور داد
-      };
+      img.onerror = onImageLoad;
     });
 
     const runIntroSequence = () => {
@@ -94,7 +125,6 @@ const App: React.FC = () => {
         }
       });
 
-      // 1. Counter 0 to 100
       if (counterRef.current) {
         tl.to(counterRef.current, { 
           innerText: 100, 
@@ -108,13 +138,11 @@ const App: React.FC = () => {
         tl.to(counterRef.current, { opacity: 0, duration: 0.5 });
       }
 
-      // 2. Name Reveal "Zahra"
       if (nameRef.current) {
         tl.to(nameRef.current, { opacity: 1, duration: 1.5, ease: "power2.inOut" }, "-=0.2");
         tl.to(nameRef.current, { opacity: 0, duration: 1, ease: "power2.inOut" }, "+=1.5");
       }
 
-      // 3. Preloader Exit & World Entrance
       if (preloaderRef.current) {
         tl.to(preloaderRef.current, { opacity: 0, duration: 1.5, ease: "power2.inOut" });
       }
@@ -130,19 +158,14 @@ const App: React.FC = () => {
 
   }, []);
 
-  // Enable Keyboard Navigation
+  // Keyboard Nav
   useEffect(() => {
     if (isLoading) return; 
-
     const handleKeyDown = (e: KeyboardEvent) => {
       const scrollStep = 100;
-      if (e.key === 'ArrowRight') {
-        window.scrollBy({ top: scrollStep, behavior: 'smooth' });
-      } else if (e.key === 'ArrowLeft') {
-        window.scrollBy({ top: -scrollStep, behavior: 'smooth' });
-      }
+      if (e.key === 'ArrowRight') window.scrollBy({ top: scrollStep, behavior: 'smooth' });
+      else if (e.key === 'ArrowLeft') window.scrollBy({ top: -scrollStep, behavior: 'smooth' });
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isLoading]);
@@ -163,7 +186,6 @@ const App: React.FC = () => {
 
       const DURATION = 10;
 
-      // Layers Animation
       if (moonRef.current) tl.to(moonRef.current, { xPercent: -20, ease: "none", duration: DURATION }, 0);
       if (cloudsRef.current) tl.to(cloudsRef.current, { xPercent: -40, ease: "none", duration: DURATION }, 0);
       
@@ -190,20 +212,44 @@ const App: React.FC = () => {
           }
       });
 
-      // CTA Button
       if (ctaRef.current) {
         gsap.set(ctaRef.current, { autoAlpha: 0, y: 20 });
         tl.to(ctaRef.current, { autoAlpha: 1, y: 0, duration: 0.5 }, 9.8);
       }
 
-      // Girl Animation
+      // --- IMPROVED GIRL ANIMATION (GHOST EFFECT) ---
       if (girlRef.current) {
+        // 1. حرکت شناور عمودی (آهسته و نرم)
         gsap.to(girlRef.current, {
-          y: -15, duration: 3, repeat: -1, yoyo: true, ease: "sine.inOut",
+          y: -25, 
+          duration: 4, 
+          repeat: -1, 
+          yoyo: true, 
+          ease: "sine.inOut",
+        });
+
+        // 2. حرکت چرخشی بسیار ظریف (حس معلق بودن در باد)
+        // زمان‌بندی متفاوت (5.5 ثانیه) باعث می‌شود حرکت تکراری نشود
+        gsap.to(girlRef.current, {
+          rotation: 3, 
+          transformOrigin: "center center",
+          duration: 5.5, 
+          repeat: -1, 
+          yoyo: true, 
+          ease: "sine.inOut"
+        });
+
+        // 3. افکت "نفس کشیدن" نور (Glow Pulse)
+        gsap.to(girlRef.current, {
+            filter: "drop-shadow(0 0 40px rgba(255,255,255,0.9))",
+            duration: 3,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut"
         });
       }
+      // --- END GIRL ANIMATION ---
 
-      // Orbs Interaction
       if (worldTween) {
         const orbs = gsap.utils.toArray<HTMLElement>(".orb-target");
         orbs.forEach((orb) => {
@@ -231,7 +277,6 @@ const App: React.FC = () => {
 
   return (
     <>
-      {/* PRELOADER */}
       <div 
         ref={preloaderRef}
         className={`fixed inset-0 z-[100] bg-[#020024] flex items-center justify-center ${!isLoading ? 'pointer-events-none' : ''}`}
@@ -242,7 +287,6 @@ const App: React.FC = () => {
         </h1>
       </div>
 
-      {/* MAIN CONTENT WRAPPER */}
       <div 
         ref={contentRef}
         className="opacity-0 relative" 
@@ -251,7 +295,6 @@ const App: React.FC = () => {
           ref={componentRef} 
           className="relative w-screen h-screen overflow-hidden bg-gradient-to-b from-[#020024] to-[#1a1a40] font-['Cormorant_Garamond']"
         >
-          {/* MUSIC CONTROLS */}
           <button 
             onClick={toggleMusic}
             className="fixed top-8 left-8 z-50 flex items-center gap-2 group opacity-70 hover:opacity-100 transition-opacity"
@@ -264,10 +307,8 @@ const App: React.FC = () => {
           
           <audio ref={audioRef} src={getPath('/music/music.mp3')} loop />
 
-          {/* NARRATIVE OVERLAY */}
           <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
             
-            {/* Segment 1 */}
             <div ref={text1Ref} className="absolute flex flex-col items-center text-center opacity-0 px-4">
               <h2 className="text-3xl md:text-5xl font-light text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] mb-4 leading-tight">
                 "My first love wasn’t a story <br/>— it was you."
@@ -277,7 +318,6 @@ const App: React.FC = () => {
               </p>
             </div>
 
-            {/* Segment 2 */}
             <div ref={text2Ref} className="absolute flex flex-col items-center text-center opacity-0 px-4">
               <h2 className="text-3xl md:text-5xl font-light text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] mb-4 leading-tight">
                 "I stepped away not because <br/> my feelings disappeared..."
@@ -287,7 +327,6 @@ const App: React.FC = () => {
               </p>
             </div>
 
-            {/* Segment 3 */}
             <div ref={text3Ref} className="absolute flex flex-col items-center text-center opacity-0 px-4">
               <h2 className="text-3xl md:text-5xl font-light text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] mb-4 leading-tight">
                 "To the strange, beautiful little <br/> world we built..."
@@ -297,7 +336,6 @@ const App: React.FC = () => {
               </p>
             </div>
 
-            {/* Segment 4 */}
             <div ref={text4Ref} className="absolute flex flex-col items-center text-center opacity-0 px-4">
               <h2 className="text-3xl md:text-5xl font-light text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] mb-4 leading-tight">
                 "If your world still has space for me..."
@@ -308,7 +346,6 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* FINAL CTA */}
           <a 
             ref={ctaRef}
             href="https://splus.ir/IRI_Salman"
@@ -322,15 +359,13 @@ const App: React.FC = () => {
             <span className="text-sm uppercase tracking-widest text-white/90">Waiting for your answer</span>
           </a>
 
-          {/* MOON */}
           <img 
             ref={moonRef}
-            src={getPath('/pictures/moon.png')} // یا the_moon.png
+            src={getPath('/pictures/moon.png')}
             alt="Moon" 
             className="absolute top-[10vh] right-[10vw] w-[20vh] h-[20vh] object-contain z-0 opacity-90 drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]"
           />
 
-          {/* CLOUDS */}
           <div 
             ref={cloudsRef}
             className="absolute bottom-0 left-0 h-1/2 flex z-10 opacity-60 pointer-events-none mix-blend-screen"
@@ -341,75 +376,55 @@ const App: React.FC = () => {
             <img src={getPath('/pictures/clouds.png')} alt="Clouds" className="w-screen h-full object-cover" />
           </div>
 
-          {/* WORLD */}
           <div 
             ref={sliderRef} 
             className="relative flex h-full w-[500vw] z-20 pointer-events-none"
           >
-            {/* 15% - Pillar */}
             <img 
               src={getPath('/pictures/pillar_tall.png')} 
               alt="Ancient Pillar" 
               className="absolute bottom-0 left-[15%] h-[65vh] object-contain opacity-80 brightness-75"
             />
-
-            {/* 25% - Orb 1 */}
             <img 
               src={getPath('/pictures/orbs.png')}
               alt="Memory Orb"
               className="orb-target absolute bottom-[30vh] left-[25%] w-[8vh] h-[8vh] object-contain opacity-50 grayscale scale-90"
             />
-
-            {/* 35% - Broken Arch */}
             <img 
               src={getPath('/pictures/arch_broken.png')} 
               alt="Broken Arch" 
               className="absolute bottom-0 left-[35%] h-[50vh] object-contain opacity-80 brightness-75"
             />
-
-            {/* 45% - Orb 2 */}
             <img 
               src={getPath('/pictures/orbs.png')}
               alt="Memory Orb"
               className="orb-target absolute top-[40vh] left-[45%] w-[10vh] h-[10vh] object-contain opacity-50 grayscale scale-90"
             />
-
-            {/* 50% - Pillar Flipped */}
             <img 
               src={getPath('/pictures/pillar_tall.png')} 
               alt="Ancient Pillar" 
               className="absolute bottom-0 left-[50%] h-[60vh] object-contain opacity-80 brightness-75 scale-x-[-1]"
             />
-
-            {/* 60% - Crane */}
             <img 
               src={getPath('/pictures/crane.png')} 
               alt="Paper Crane" 
               className="absolute top-[15%] left-[60%] w-[15vh] object-contain opacity-90 drop-shadow-lg"
             />
-
-            {/* 65% - Orb 3 */}
             <img 
               src={getPath('/pictures/orbs.png')}
               alt="Memory Orb"
               className="orb-target absolute bottom-[20vh] left-[65%] w-[7vh] h-[7vh] object-contain opacity-50 grayscale scale-90"
             />
-
-            {/* 75% - Orb 4 (Path Start) */}
             <img 
               src={getPath('/pictures/orbs.png')}
               alt="Memory Orb"
               className="orb-target absolute top-[25vh] left-[75%] w-[9vh] h-[9vh] object-contain opacity-50 grayscale scale-90"
             />
-
-            {/* 80% - Orb 5 (Path End) */}
             <img 
               src={getPath('/pictures/orbs.png')}
               alt="Memory Orb"
               className="orb-target absolute bottom-[45vh] left-[80%] w-[8vh] h-[8vh] object-contain opacity-50 grayscale scale-90"
             />
-
-            {/* 90% - Moon Palace */}
             <img 
               src={getPath('/pictures/palace.png')} 
               alt="Moon Palace" 
@@ -417,15 +432,13 @@ const App: React.FC = () => {
             />
           </div>
 
-          {/* GIRL */}
           <img
             ref={girlRef}
             src={getPath('/pictures/girl.png')}
             alt="The Girl"
-            className="absolute top-[45%] left-[20%] w-[18vh] object-contain z-30 opacity-100 drop-shadow-[0_0_30px_rgba(255,255,255,0.8)]" 
+            className="absolute top-[45%] left-[20%] w-[18vh] object-contain z-30 opacity-100 drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]" 
           />
 
-          {/* REEDS */}
           <div 
             ref={reedsRef}
             className="absolute bottom-0 left-0 h-[45vh] flex z-40 pointer-events-none"
